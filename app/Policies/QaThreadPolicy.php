@@ -17,8 +17,9 @@ use App\Models\User;
  * - view: admin は全件、student は公開中資格なら無条件、coach は公開中かつ担当資格のみ
  * - create: 投稿(スレッド新規作成)は student のみ
  * - update: 投稿者本人のみ(資格の変更は不可、Controller/Request 側で制御)
- * - delete: admin は任意のスレッドを削除可。投稿者本人は「まだ回答が付いていない」スレッドのみ削除可
- *   (集合知として蓄積された回答付きスレッドは以後モデレーション削除のみ)
+ * - delete: admin は任意のスレッドを削除可。投稿者本人も削除権限自体はあるが、
+ *   「回答が付いていない」という業務ルールは Controller 側で `ThreadHasRepliesException` (409) として判定する
+ *   (Policy は権限の有無のみを扱い、状態依存の業務ルール違反は 403 ではなく丁寧なエラーメッセージで案内するため)
  * - resolve / unresolve: 投稿者本人のみ、かつ現在の状態と矛盾しない場合のみ
  */
 class QaThreadPolicy
@@ -59,15 +60,7 @@ class QaThreadPolicy
 
     public function delete(User $user, QaThread $thread): bool
     {
-        if ($user->role === UserRole::Admin) {
-            return true;
-        }
-
-        if ($user->id !== $thread->user_id) {
-            return false;
-        }
-
-        return $thread->loadCount('replies')->replies_count === 0;
+        return $user->role === UserRole::Admin || $user->id === $thread->user_id;
     }
 
     public function resolve(User $user, QaThread $thread): bool

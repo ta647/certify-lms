@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\CertificationStatus;
 use App\Enums\UserRole;
+use App\Exceptions\QaBoard\ThreadHasRepliesException;
 use App\Http\Requests\QaBoard\IndexRequest;
 use App\Http\Requests\QaBoard\StoreThreadRequest;
 use App\Http\Requests\QaBoard\UpdateThreadRequest;
@@ -95,11 +96,21 @@ class QaThreadController extends Controller
             ->with('success', '質問を更新しました。');
     }
 
+    /**
+     * @throws ThreadHasRepliesException
+     */
     public function destroy(QaThread $thread): RedirectResponse
     {
         $this->authorize('delete', $thread);
 
         $isAdminContext = request()->routeIs('admin.*');
+
+        // 投稿者本人による削除は「回答 0 件」の業務ルールを満たす場合のみ実行する。
+        // admin のモデレーション削除はこのルールの対象外(回答付きスレッドも削除可)。
+        if (! $isAdminContext && $thread->loadCount('replies')->replies_count > 0) {
+            throw new ThreadHasRepliesException;
+        }
+
         $thread->delete();
 
         return redirect()

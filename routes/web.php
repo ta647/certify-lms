@@ -40,6 +40,9 @@ use App\Http\Controllers\SectionQuestionController;
 use App\Http\Controllers\SectionQuizController;
 use App\Http\Controllers\SectionQuizResultController;
 use App\Http\Controllers\Settings\AvailabilityController as SettingsAvailabilityController;
+use App\Http\Controllers\Settings\AvatarController;
+use App\Http\Controllers\Settings\PasswordController;
+use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SettingsDefaultEnrollmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeakDrillController;
@@ -112,6 +115,21 @@ Route::middleware(['auth', 'role:student', 'active-learning'])
     ->group(function () {
         Route::put('default-enrollment/{enrollment}', [SettingsDefaultEnrollmentController::class, 'update'])
             ->name('default-enrollment.update');
+    });
+
+// ============================================================
+// 全ロール共通 設定ルート(プロフィール / アバター / パスワード)
+// ============================================================
+// active-learning を適用しない: 修了済(graduated)ユーザーもプロフィール・パスワードは引き続き利用可能にするため
+Route::middleware('auth')
+    ->prefix('settings')
+    ->name('settings.')
+    ->group(function () {
+        Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('avatar', [AvatarController::class, 'store'])->name('avatar.store');
+        Route::delete('avatar', [AvatarController::class, 'destroy'])->name('avatar.destroy');
+        Route::put('password', [PasswordController::class, 'update'])->name('password.update');
     });
 
 // ============================================================

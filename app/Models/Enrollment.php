@@ -156,13 +156,24 @@ class Enrollment extends Model
     }
 
     /**
-     * 受講登録が削除(SoftDelete)される際、配下の個人学習目標も連動して物理削除する。
+     * コーチ業務記録メモ一覧。並び順は `_list.blade.php` 側で都度指定するため、ここでは持たせない。
+     *
+     * @return HasMany<EnrollmentNote, $this>
+     */
+    public function notes(): HasMany
+    {
+        return $this->hasMany(EnrollmentNote::class);
+    }
+
+    /**
+     * 受講登録が削除(SoftDelete)される際、配下の個人学習目標・コーチメモも連動して物理削除する。
      * SoftDeleteはUPDATE文のためDBのcascadeOnDeleteだけでは連動しない。
      */
     protected static function booted(): void
     {
         static::deleting(function (Enrollment $enrollment): void {
             $enrollment->goals()->delete();
+            $enrollment->notes()->delete();
         });
     }
 

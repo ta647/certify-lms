@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\EnrollmentGoalFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,5 +40,26 @@ class EnrollmentGoal extends Model
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class);
+    }
+
+    public function isAchieved(): bool
+    {
+        return $this->achieved_at !== null;
+    }
+
+    /**
+     * 未達成を先頭にし、その中で目標期日が近い順(期日未設定は末尾)、
+     * 同条件は新しく作成した順に並べる表示順scope。
+     *
+     * @param Builder<EnrollmentGoal> $query
+     *
+     * @return Builder<EnrollmentGoal>
+     */
+    public function scopeDisplayOrder(Builder $query): Builder
+    {
+        return $query->orderByRaw('(achieved_at IS NOT NULL) ASC')
+            ->orderByRaw('(target_date IS NULL) ASC')
+            ->orderBy('target_date')
+            ->orderByDesc('created_at');
     }
 }

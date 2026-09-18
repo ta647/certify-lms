@@ -152,11 +152,7 @@ class Enrollment extends Model
      */
     public function goals(): HasMany
     {
-        return $this->hasMany(EnrollmentGoal::class)
-            ->orderByRaw('(achieved_at IS NOT NULL) ASC')
-            ->orderByRaw('(target_date IS NULL) ASC')
-            ->orderBy('target_date')
-            ->orderByDesc('created_at');
+        return $this->hasMany(EnrollmentGoal::class)->displayOrder();
     }
 
     /**

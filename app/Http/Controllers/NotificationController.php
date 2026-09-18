@@ -30,6 +30,13 @@ class NotificationController extends Controller
         ]);
     }
 
+    public function show(DatabaseNotification $notification): View
+    {
+        abort_unless($notification->notifiable_id === auth()->id(), 403);
+
+        return view('notifications.show', ['notification' => $notification]);
+    }
+
     public function markAsRead(DatabaseNotification $notification): RedirectResponse
     {
         abort_unless($notification->notifiable_id === auth()->id(), 403);

@@ -143,6 +143,33 @@ class Enrollment extends Model
         return $this->hasOne(LearningHourTarget::class);
     }
 
+    /**
+     * 個人学習目標一覧。未達成→達成済の順、各グループ内は目標期日が近い順(未設定は後ろ)、
+     * 同条件なら作成日の新しい順で並ぶ。`_form.blade.php` がこのリレーションをそのまま
+     * `$enrollment->goals` として使うため、並び順はここに組み込む。
+     *
+     * @return HasMany<EnrollmentGoal, $this>
+     */
+    public function goals(): HasMany
+    {
+        return $this->hasMany(EnrollmentGoal::class)
+            ->orderByRaw('(achieved_at IS NOT NULL) ASC')
+            ->orderByRaw('(target_date IS NULL) ASC')
+            ->orderBy('target_date')
+            ->orderByDesc('created_at');
+    }
+
+    /**
+     * 受講登録が削除(SoftDelete)される際、配下の個人学習目標も連動して物理削除する。
+     * SoftDeleteはUPDATE文のためDBのcascadeOnDeleteだけでは連動しない。
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Enrollment $enrollment): void {
+            $enrollment->goals()->delete();
+        });
+    }
+
     public function scopeLearning(Builder $query): Builder
     {
         return $query->where('status', EnrollmentStatus::Learning->value);

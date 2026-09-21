@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\OnboardingController;
 use App\Http\Controllers\BrowseController;
 use App\Http\Controllers\CertificationCatalogController;
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
     // 通知一覧・既読化(全ロール共通、active-learning対象外)
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::get('notifications/{notification}', [NotificationController::class, 'show'])->name('notifications.show');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
     // 受講登録(3 ロール共有: student=自分のみ / coach=担当範囲 / admin=全件)。
@@ -241,6 +243,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         ->name('admin.meeting-packs.archive');
     Route::post('meeting-packs/{plan}/unarchive', [MeetingPackController::class, 'unarchive'])
         ->name('admin.meeting-packs.unarchive');
+
+    // お知らせ配信管理(一覧・新規配信・詳細のみ、編集・削除・再配信は無い、admin のみ)
+    Route::get('announcements', [AnnouncementController::class, 'index'])->name('admin.announcements.index');
+    Route::get('announcements/create', [AnnouncementController::class, 'create'])->name('admin.announcements.create');
+    Route::post('announcements', [AnnouncementController::class, 'store'])->name('admin.announcements.store');
+    Route::get('announcements/{announcement}', [AnnouncementController::class, 'show'])->name('admin.announcements.show');
 
     // プランマスタ管理(受講プランのCRUD + 状態遷移、admin のみ)
     Route::resource('plans', PlanController::class)->names('admin.plans');

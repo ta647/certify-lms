@@ -24,7 +24,7 @@ class ChapterPolicy
     {
         return match ($auth->role) {
             UserRole::Admin => true,
-            UserRole::Coach => false,
+            UserRole::Coach => in_array($part->certification_id, $auth->coachingCertificationIds(), true),
             default => false,
         };
     }
@@ -33,7 +33,7 @@ class ChapterPolicy
     {
         return match ($auth->role) {
             UserRole::Admin => true,
-            UserRole::Coach => false,
+            UserRole::Coach => in_array($chapter->part->certification_id, $auth->coachingCertificationIds(), true),
             default => $chapter->status === ContentStatus::Published,
         };
     }
@@ -72,13 +72,8 @@ class ChapterPolicy
     {
         return match ($auth->role) {
             UserRole::Admin => true,
-            UserRole::Coach => false,
+            UserRole::Coach => in_array($certification->id, $auth->coachingCertificationIds(), true),
             default => false,
         };
-    }
-
-    private function assignedCoach(User $coach, Certification $certification): bool
-    {
-        return $certification->coaches()->where('users.id', $coach->id)->exists();
     }
 }

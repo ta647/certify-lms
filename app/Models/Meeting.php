@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\MeetingReminderWindow;
 use App\Enums\MeetingStatus;
 use Database\Factories\MeetingFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,6 +41,8 @@ class Meeting extends Model
         'meeting_url_snapshot',
         'completed_at',
         'meeting_quota_transaction_id',
+        'eve_reminder_sent_at',
+        'one_hour_reminder_sent_at',
     ];
 
     protected $casts = [
@@ -47,6 +50,8 @@ class Meeting extends Model
         'scheduled_at' => 'datetime',
         'canceled_at' => 'datetime',
         'completed_at' => 'datetime',
+        'eve_reminder_sent_at' => 'datetime',
+        'one_hour_reminder_sent_at' => 'datetime',
     ];
 
     /**
@@ -129,5 +134,21 @@ class Meeting extends Model
     public function scopeForStudent(Builder $query, User $student): Builder
     {
         return $query->where('student_id', $student->id);
+    }
+
+    /**
+     * 指定ウィンドウのリマインダーがまだ未送信の予約済み面談に絞る。
+     * `eve`: 開始日が「明日」の予約。`one_hour_before`: 開始時刻が「今〜65分後」の予約。
+     */
+    public function scopeDueForReminder(Builder $query, MeetingReminderWindow $window): Builder
+    {
+        $query
+            ->where('status', MeetingStatus::Reserved->value)
+            ->whereNull($window->sentAtColumn());
+
+        return match ($window) {
+            MeetingReminderWindow::Eve => $query->whereDate('scheduled_at', now()->addDay()->toDateString()),
+            MeetingReminderWindow::OneHourBefore => $query->whereBetween('scheduled_at', [now(), now()->addMinutes(65)]),
+        };
     }
 }

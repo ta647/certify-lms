@@ -224,6 +224,28 @@ class OnboardingTest extends TestCase
         ]);
     }
 
+    public function test_can_relogin_with_credentials_after_onboarding_and_logout(): void
+    {
+        $invitation = $this->freshInvitation();
+        $email = $invitation->user->email;
+
+        $this->post($this->postUrl($invitation), [
+            'name' => '受講太郎',
+            'password' => 'secret-pass',
+            'password_confirmation' => 'secret-pass',
+        ]);
+
+        $this->post(route('logout'));
+        $this->assertGuest();
+
+        $this->post(route('login'), [
+            'email' => $email,
+            'password' => 'secret-pass',
+        ]);
+
+        $this->assertAuthenticatedAs($invitation->user->fresh());
+    }
+
     public function test_store_does_not_create_new_user_row(): void
     {
         $invitation = $this->freshInvitation();

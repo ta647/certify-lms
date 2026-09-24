@@ -67,6 +67,7 @@ final class OnboardAction
                 'name' => $validated['name'],
                 'bio' => $validated['bio'] ?? null,
                 'password' => Hash::make($validated['password']),
+                'status' => UserStatus::InProgress->value,
                 'profile_setup_completed' => true,
                 'email_verified_at' => $now,
             ];
@@ -90,6 +91,11 @@ final class OnboardAction
             );
 
             $user->forceFill($attrs)->save();
+
+            $invitation->update([
+                'status' => InvitationStatus::Accepted->value,
+                'accepted_at' => $now,
+            ]);
 
             // 面談クォータは受講生固有の消費対象。コーチは面談を提供する側のため初期付与しない。
             if ($user->role === UserRole::Student && $user->plan->default_meeting_quota > 0) {

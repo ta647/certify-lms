@@ -128,6 +128,24 @@ class OnboardingTest extends TestCase
 
         $response = $this->get($url);
 
+        $response->assertStatus(410);
+        $response->assertViewIs('auth.invitation-invalid');
+    }
+
+    public function test_reused_invitation_url_after_onboarding_completion_returns_410(): void
+    {
+        $invitation = $this->freshInvitation();
+        $showUrl = $this->signedShowUrl($invitation);
+
+        $this->post($this->postUrl($invitation), [
+            'name' => '受講太郎',
+            'password' => 'secret-pass',
+            'password_confirmation' => 'secret-pass',
+        ]);
+
+        $response = $this->get($showUrl);
+
+        $response->assertStatus(410);
         $response->assertViewIs('auth.invitation-invalid');
     }
 

@@ -141,5 +141,11 @@ sail bin pint --test     # 整形漏れの確認（CI 相当のチェック）
 `.env.example` をコピーするだけで、すべての機能がローカルで動作します（メールは Mailpit に配信されます）。
 
 - `PUSHER_*` — チャットのリアルタイム配信に使用します。有効にする場合は Pusher のキーを取得して設定し、`BROADCAST_DRIVER=pusher` に変更してください。未設定（既定の `BROADCAST_DRIVER=log`）でもメッセージの送受信自体は動作し、相手画面へのリアルタイム反映のみ行われません
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — コーチの面談設定タブから Google カレンダーと連携する機能に使用します。未設定でも他の機能には影響しません（連携ボタンを押した際にエラーになるのみ）。設定する場合は以下の手順で OAuth クライアントを作成してください。
+  1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成（または既存のものを利用）
+  2. 「API とサービス」→「ライブラリ」から **Google Calendar API** を有効化
+  3. 「API とサービス」→「認証情報」→「認証情報を作成」→「OAuth クライアント ID」を選択し、アプリケーションの種類は「ウェブ アプリケーション」を選択
+  4. 「承認済みのリダイレクト URI」に `{APP_URL}/settings/google-calendar/callback`（ローカルでは `http://localhost:8000/settings/google-calendar/callback`）を追加
+  5. 発行された クライアント ID / クライアントシークレット を `.env` の `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` に設定
 
 新しい環境変数やセットアップ手順を追加した場合は、`.env.example` と本 README に追記し、チームの誰でも環境を再現できる状態を保ってください。

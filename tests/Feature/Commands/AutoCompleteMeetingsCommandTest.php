@@ -39,4 +39,23 @@ class AutoCompleteMeetingsCommandTest extends TestCase
         $this->assertSame(3, $completedCount);
         $this->assertSame(1, $reservedCount);
     }
+
+    public function test_all_overdue_meetings_are_completed_beyond_a_single_chunk(): void
+    {
+        // チャンクサイズ(100)を超える件数を用意し、更新しながらの分割取得で取りこぼしが無いことを検証する
+        $coach = User::factory()->coach()->create();
+        $student = User::factory()->student()->create();
+        $base = now()->copy()->startOfHour();
+
+        for ($i = 0; $i < 150; $i++) {
+            Meeting::factory()->reserved()->forCoach($coach)->forStudent($student)->create([
+                'scheduled_at' => $base->copy()->subHours($i + 2),
+            ]);
+        }
+
+        $this->artisan('meetings:auto-complete')->assertExitCode(0);
+
+        $completedCount = Meeting::where('status', MeetingStatus::Completed->value)->count();
+        $this->assertSame(150, $completedCount, 'チャンク分割の取りこぼしにより一部が未処理のまま残っている');
+    }
 }

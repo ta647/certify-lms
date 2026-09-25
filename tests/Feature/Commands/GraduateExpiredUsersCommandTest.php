@@ -31,6 +31,24 @@ class GraduateExpiredUsersCommandTest extends TestCase
         $this->assertSame(UserStatus::InProgress, $stillActive->fresh()->status);
     }
 
+    public function test_all_expired_users_are_graduated_beyond_a_single_chunk(): void
+    {
+        // チャンクサイズ(100)を超える件数を用意し、更新しながらの分割取得で取りこぼしが無いことを検証する
+        $plan = Plan::factory()->published()->create();
+        $expiredUsers = User::factory()
+            ->count(150)
+            ->inProgress()
+            ->withPlan($plan)
+            ->create(['plan_expires_at' => now()->subDay()]);
+
+        $this->artisan('users:graduate-expired')
+            ->assertExitCode(0)
+            ->expectsOutputToContain('Graduated 150 expired users.');
+
+        $graduatedCount = $expiredUsers->fresh()->where('status', UserStatus::Graduated)->count();
+        $this->assertSame(150, $graduatedCount, 'チャンク分割の取りこぼしにより一部が未処理のまま残っている');
+    }
+
     public function test_invited_and_graduated_users_are_not_affected(): void
     {
         $plan = Plan::factory()->published()->create();

@@ -28,6 +28,22 @@ class FailExpiredEnrollmentsCommandTest extends TestCase
         $this->assertSame(EnrollmentStatus::Learning, $futureExam->fresh()->status);
     }
 
+    public function test_all_expired_enrollments_are_failed_beyond_a_single_chunk(): void
+    {
+        // チャンクサイズ(100)を超える件数を用意し、更新しながらの分割取得で取りこぼしが無いことを検証する
+        $expiredEnrollments = Enrollment::factory()
+            ->count(150)
+            ->learning()
+            ->create(['exam_date' => now()->subDay()->toDateString()]);
+
+        $this->artisan('enrollments:fail-expired')
+            ->assertExitCode(0)
+            ->expectsOutputToContain('Failed 150 expired enrollments.');
+
+        $failedCount = $expiredEnrollments->fresh()->where('status', EnrollmentStatus::Failed)->count();
+        $this->assertSame(150, $failedCount, 'チャンク分割の取りこぼしにより一部が未処理のまま残っている');
+    }
+
     public function test_enrollment_without_exam_date_is_skipped(): void
     {
         $noExamDate = Enrollment::factory()->learning()->create(['exam_date' => null]);

@@ -11,9 +11,11 @@ use App\Models\CoachAvailability;
 use App\Models\Enrollment;
 use App\Models\Meeting;
 use App\Models\User;
+use App\Services\GoogleCalendarService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Mockery;
 use Tests\TestCase;
 
 class MeetingControllerTest extends TestCase
@@ -113,6 +115,31 @@ class MeetingControllerTest extends TestCase
             'enrollment_id' => $enrollment->id,
             'status' => MeetingStatus::Reserved->value,
         ]);
+    }
+
+    public function test_store_rejects_slot_busy_on_connected_coachs_google_calendar(): void
+    {
+        $student = User::factory()->student()->inProgress()->create(['max_meetings' => 3]);
+        $admin = User::factory()->admin()->create();
+        $coach = User::factory()->coach()->inProgress()->create();
+        $certification = Certification::factory()->published()->create();
+        $this->attachCoach($certification, $coach, $admin);
+        CoachAvailability::factory()->forCoach($coach)->onDay(1)->timeRange('09:00:00', '18:00:00')->create();
+        $enrollment = Enrollment::factory()->for($student, 'user')->for($certification)->learning()->create();
+
+        $scheduledAt = now()->startOfDay()->next(Carbon::MONDAY)->setTime(10, 0);
+
+        $mock = Mockery::mock(GoogleCalendarService::class);
+        $mock->shouldReceive('busyTimeKeysForCoach')->andReturn(['10:00']);
+        $this->app->instance(GoogleCalendarService::class, $mock);
+
+        $response = $this->actingAs($student)->post(route('meetings.store', $enrollment), [
+            'scheduled_at' => $scheduledAt->format('Y-m-d\TH:i:s'),
+            'topic' => '相談したい',
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertDatabaseCount('meetings', 0);
     }
 
     public function test_store_rejects_non_zero_minutes(): void

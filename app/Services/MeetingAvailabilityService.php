@@ -16,11 +16,13 @@ use Illuminate\Support\Collection;
  * 担当コーチ集合の面談可能時間枠を 60 分単位で展開し、空きスロットを集計する Service。
  *
  * 受講生の予約画面が「該当資格の担当コーチ全員の有効枠 Union」を 1 日単位で取得し、
- * 既存予約済時刻 を除外して各スロットの「予約可能なコーチ数」を返す。受講生にコーチ個別は提示せず、
- * 予約確定時にコーチを自動割当する。
+ * 既存予約済時刻 と Googleカレンダー連携済コーチのbusy時刻 を除外して各スロットの
+ * 「予約可能なコーチ数」を返す。受講生にコーチ個別は提示せず、予約確定時にコーチを自動割当する。
  */
 final class MeetingAvailabilityService
 {
+    public function __construct(private readonly GoogleCalendarService $googleCalendar) {}
+
     /**
      * 指定 Certification の担当コーチ集合について、指定日 1 日分の 60 分単位空きスロットを返す。
      *
@@ -34,7 +36,7 @@ final class MeetingAvailabilityService
         $dayEnd = $date->copy()->endOfDay();
         $dayOfWeek = $date->dayOfWeek;
 
-        $coaches = $certification->coaches()->get();
+        $coaches = $certification->coaches()->with('googleCredential')->get();
         if ($coaches->isEmpty()) {
             return collect();
         }
@@ -58,6 +60,11 @@ final class MeetingAvailabilityService
             ->groupBy('coach_id')
             ->map(fn ($rows) => $rows->map(fn (Meeting $m) => $m->scheduled_at->format('H:i'))->all());
 
+        // Googleカレンダー連携済コーチのbusyスロットを (coach_id => Set<H:i>) で索引化(未連携コーチは空配列)
+        $googleBusyByCoach = $coaches->mapWithKeys(
+            fn ($coach) => [$coach->id => $this->googleCalendar->busyTimeKeysForCoach($coach, $date)],
+        );
+
         /** @var array<string, int> $slotCounts スロット開始時刻(H:i) → available coach 数 */
         $slotCounts = [];
 
@@ -69,8 +76,9 @@ final class MeetingAvailabilityService
                 $slotKey = $slot->format('H:i');
                 $coachId = $availability->coach_id;
                 $booked = $bookedByCoach[$coachId] ?? [];
+                $googleBusy = $googleBusyByCoach[$coachId] ?? [];
 
-                if (! in_array($slotKey, $booked, true)) {
+                if (! in_array($slotKey, $booked, true) && ! in_array($slotKey, $googleBusy, true)) {
                     $slotCounts[$slotKey] = ($slotCounts[$slotKey] ?? 0) + 1;
                 }
 

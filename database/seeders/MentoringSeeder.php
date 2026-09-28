@@ -10,6 +10,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\CoachAvailability;
 use App\Models\Enrollment;
+use App\Models\GoogleCalendarCredential;
 use App\Models\Meeting;
 use App\Models\MeetingMemo;
 use App\Models\MeetingQuotaTransaction;
@@ -39,6 +40,20 @@ final class MentoringSeeder extends Seeder
         $this->seedFixedStudentMeetings();
         $this->seedNoQuotaStudentMeetings();
         $this->seedDemoMeetings();
+        $this->seedGoogleCalendarCredential();
+    }
+
+    /**
+     * 固定コーチ1名(coach@)のみGoogleカレンダー連携済にし、もう1名(coach2@)は未連携のままにする。
+     * 連携状態の表示・予約画面での空き枠反映・連携解除の動作確認ができる状態を作る(S-A-01の初期データ要件)。
+     */
+    private function seedGoogleCalendarCredential(): void
+    {
+        $coach1 = User::query()->where('email', 'coach@certify-lms.test')->first();
+
+        if ($coach1 !== null) {
+            GoogleCalendarCredential::factory()->forUser($coach1)->create();
+        }
     }
 
     /**

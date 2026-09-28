@@ -9,10 +9,12 @@ use App\Models\Certification;
 use App\Models\CoachAvailability;
 use App\Models\Meeting;
 use App\Models\User;
+use App\Services\GoogleCalendarService;
 use App\Services\MeetingAvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Mockery;
 use Tests\TestCase;
 
 class MeetingAvailabilityServiceTest extends TestCase
@@ -78,6 +80,25 @@ class MeetingAvailabilityServiceTest extends TestCase
         $slots = app(MeetingAvailabilityService::class)->slotsForCertification($certification, $date);
 
         $this->assertCount(0, $slots);
+    }
+
+    public function test_excludes_slots_busy_on_connected_coachs_google_calendar(): void
+    {
+        $certification = Certification::factory()->published()->create();
+        $coach = User::factory()->coach()->create();
+        $this->attachCoach($certification, $coach);
+
+        $date = Carbon::parse('2026-06-01');
+        CoachAvailability::factory()->forCoach($coach)->onDay(1)->timeRange('09:00:00', '12:00:00')->create();
+
+        $mock = Mockery::mock(GoogleCalendarService::class);
+        $mock->shouldReceive('busyTimeKeysForCoach')->andReturn(['10:00']);
+        $this->app->instance(GoogleCalendarService::class, $mock);
+
+        $slots = app(MeetingAvailabilityService::class)->slotsForCertification($certification, $date);
+
+        $times = $slots->map(fn (array $s) => $s['slot_start']->format('H:i'))->all();
+        $this->assertEquals(['09:00', '11:00'], $times);
     }
 
     public function test_unions_multiple_coaches_into_available_count(): void

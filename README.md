@@ -147,5 +147,9 @@ sail bin pint --test     # 整形漏れの確認（CI 相当のチェック）
   3. 「API とサービス」→「認証情報」→「認証情報を作成」→「OAuth クライアント ID」を選択し、アプリケーションの種類は「ウェブ アプリケーション」を選択
   4. 「承認済みのリダイレクト URI」に `{APP_URL}/settings/google-calendar/callback`（ローカルでは `http://localhost:8000/settings/google-calendar/callback`）を追加
   5. 発行された クライアント ID / クライアントシークレット を `.env` の `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` に設定
+- `AI_CHAT_ENABLED` / `GEMINI_API_KEY` 等 — 受講生向けAI相談機能(Gemini連携)に使用します。既定は無効(`AI_CHAT_ENABLED=false`)で、関連ルート・ウィジェットとも表示されません。有効にする場合は以下を設定してください。
+  1. [Google AI Studio](https://aistudio.google.com/app/apikey) でGemini APIキーを発行
+  2. `.env` の `GEMINI_API_KEY` に設定し、`AI_CHAT_ENABLED=true` に変更
+  3. 任意で `AI_CHAT_DAILY_MESSAGE_LIMIT`(1受講生あたりの1日の送信上限、既定50)・`AI_CHAT_AUTO_TITLE`(会話タイトルの自動生成、既定true)・`AI_CHAT_GEMINI_MODEL`(既定`gemini-2.5-flash`)を調整
 
 新しい環境変数やセットアップ手順を追加した場合は、`.env.example` と本 README に追記し、チームの誰でも環境を再現できる状態を保ってください。

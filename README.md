@@ -151,5 +151,9 @@ sail bin pint --test     # 整形漏れの確認（CI 相当のチェック）
   1. [Google AI Studio](https://aistudio.google.com/app/apikey) でGemini APIキーを発行
   2. `.env` の `GEMINI_API_KEY` に設定し、`AI_CHAT_ENABLED=true` に変更
   3. 任意で `AI_CHAT_DAILY_MESSAGE_LIMIT`(1受講生あたりの1日の送信上限、既定50)・`AI_CHAT_AUTO_TITLE`(会話タイトルの自動生成、既定true)・`AI_CHAT_GEMINI_MODEL`(既定`gemini-2.5-flash`)を調整
+- `STRIPE_KEY` / `STRIPE_SECRET` / `STRIPE_WEBHOOK_SECRET` — 追加面談パックの購入(Stripe連携)に使用します。未設定でも他の機能には影響しません(購入ボタンを押した際にエラーになるのみ)。
+  1. [Stripeダッシュボード](https://dashboard.stripe.com/test/apikeys)(テストモード)で公開可能キー/シークレットキーを取得し、`.env` の `STRIPE_KEY` / `STRIPE_SECRET` に設定
+  2. ローカルでWebhookを受信するには [Stripe CLI](https://stripe.com/docs/stripe-cli) を導入し、`stripe listen --forward-to localhost:8000/webhooks/stripe` を実行(表示される `whsec_...` を `STRIPE_WEBHOOK_SECRET` に設定)
+  3. 決済はStripeのテストカード(例: `4242 4242 4242 4242`)で試せます
 
 新しい環境変数やセットアップ手順を追加した場合は、`.env.example` と本 README に追記し、チームの誰でも環境を再現できる状態を保ってください。

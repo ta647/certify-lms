@@ -7,6 +7,7 @@ use App\Http\Controllers\AiChatMessageController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\OnboardingController;
 use App\Http\Controllers\BrowseController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CertificationCatalogController;
 use App\Http\Controllers\CertificationCategoryController;
 use App\Http\Controllers\CertificationCoachAssignmentController;
@@ -95,6 +96,11 @@ Route::middleware('auth')->group(function () {
     Route::get('enrollments/{enrollment}', [EnrollmentController::class, 'show'])
         ->withTrashed()
         ->name('enrollments.show');
+
+    // 修了証PDFダウンロード(3ロール共有: student=本人のみ / coach=担当資格のみ / admin=全件)。
+    // active-learningミドルウェアは付けない(学習中でない受講生も本人の修了証はダウンロードできる)。
+    Route::get('certificates/{certificate}/download', [CertificateController::class, 'download'])
+        ->name('certificates.download');
 });
 
 // ============================================================

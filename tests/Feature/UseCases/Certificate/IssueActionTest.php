@@ -9,6 +9,7 @@ use App\Exceptions\Certification\CertificateAlreadyIssuedException;
 use App\Exceptions\Certification\EnrollmentNotPassedException;
 use App\Models\Certificate;
 use App\Models\Enrollment;
+use App\Services\CertificatePdfService;
 use App\UseCases\Certificate\IssueAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -42,6 +43,29 @@ class IssueActionTest extends TestCase
         $this->assertSame($enrollment->id, $certificate->enrollment_id);
         $this->assertSame($enrollment->certification_id, $certificate->certification_id);
         $this->assertDatabaseHas('certificates', ['id' => $certificate->id]);
+        Storage::disk('private')->assertExists($certificate->pdf_path);
+    }
+
+    public function test_rolls_back_certificate_when_pdf_generation_fails(): void
+    {
+        Storage::fake('private');
+
+        $enrollment = Enrollment::factory()->passed()->create();
+
+        $mock = Mockery::mock(CertificatePdfService::class);
+        $mock->shouldReceive('generate')->once()->andThrow(new \RuntimeException('mpdf failed'));
+        $this->app->instance(CertificatePdfService::class, $mock);
+
+        $action = $this->app->make(IssueAction::class);
+
+        try {
+            $action($enrollment);
+            $this->fail('例外が投げられるはず');
+        } catch (\RuntimeException) {
+            // 期待通り
+        }
+
+        $this->assertDatabaseCount('certificates', 0);
     }
 
     public function test_throws_when_enrollment_not_passed(): void

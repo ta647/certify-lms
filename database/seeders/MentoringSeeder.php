@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\MeetingQuotaTransactionType;
+use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\CoachAvailability;
@@ -13,7 +14,9 @@ use App\Models\Enrollment;
 use App\Models\GoogleCalendarCredential;
 use App\Models\Meeting;
 use App\Models\MeetingMemo;
+use App\Models\MeetingPack;
 use App\Models\MeetingQuotaTransaction;
+use App\Models\Payment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -41,6 +44,33 @@ final class MentoringSeeder extends Seeder
         $this->seedNoQuotaStudentMeetings();
         $this->seedDemoMeetings();
         $this->seedGoogleCalendarCredential();
+        $this->seedPayments();
+    }
+
+    /**
+     * 固定受講生に決済状態の異なる追加面談パック購入記録を投入する(完了/保留中/失敗、S-A-03の初期データ要件)。
+     * 完了分のみ実際に残数へ反映される(対応するMeetingQuotaTransactionを起票する)。
+     */
+    private function seedPayments(): void
+    {
+        $student = User::query()->where('email', 'student@certify-lms.test')->first();
+        $pack = MeetingPack::published()->ordered()->first();
+
+        if ($student === null || $pack === null) {
+            return;
+        }
+
+        $succeeded = Payment::factory()->forUser($student)->forPack($pack)->succeeded()->create();
+        MeetingQuotaTransaction::create([
+            'user_id' => $student->id,
+            'type' => MeetingQuotaTransactionType::Purchased->value,
+            'amount' => $succeeded->quantity,
+            'related_payment_id' => $succeeded->id,
+            'occurred_at' => $succeeded->paid_at ?? now(),
+        ]);
+
+        Payment::factory()->forUser($student)->forPack($pack)->create(['status' => PaymentStatus::Pending->value]);
+        Payment::factory()->forUser($student)->forPack($pack)->failed()->create();
     }
 
     /**

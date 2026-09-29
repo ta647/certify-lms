@@ -29,12 +29,14 @@ class Payment extends Model
         'status',
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',
+        'paid_at',
     ];
 
     protected $casts = [
         'status' => PaymentStatus::class,
         'quantity' => 'integer',
         'amount' => 'integer',
+        'paid_at' => 'datetime',
     ];
 
     /**

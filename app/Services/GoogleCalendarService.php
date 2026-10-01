@@ -195,6 +195,9 @@ class GoogleCalendarService
         $client->setAccessToken([
             'access_token' => $credential->access_token,
             'refresh_token' => $credential->refresh_token,
+            // 'created' が無いとGoogle\Client::isAccessTokenExpired()はcreated=0(1970年)扱いとなり、
+            // 有効なトークンでも常に期限切れ判定されて毎回リフレッシュが走ってしまうため明示的に設定する。
+            'created' => now()->timestamp,
             'expires_in' => $credential->token_expires_at !== null
                 ? max(0, now()->diffInSeconds($credential->token_expires_at, false))
                 : 0,

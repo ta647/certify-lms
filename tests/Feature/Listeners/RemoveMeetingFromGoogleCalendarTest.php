@@ -11,11 +11,13 @@ use App\Models\User;
 use App\Services\GoogleCalendarService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
  * 面談キャンセルイベント → Googleカレンダー上の予定削除を検証する。
  */
+#[Group('external-api')]
 class RemoveMeetingFromGoogleCalendarTest extends TestCase
 {
     use RefreshDatabase;

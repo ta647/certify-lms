@@ -11,11 +11,13 @@ use App\Models\User;
 use App\Services\GoogleCalendarService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
  * 面談予約イベント → Googleカレンダーへの予定作成を検証する。
  */
+#[Group('external-api')]
 class SyncMeetingToGoogleCalendarTest extends TestCase
 {
     use RefreshDatabase;

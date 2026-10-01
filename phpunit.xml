@@ -38,5 +38,16 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!--
+            外部API連携(Google Calendar / Gemini / Stripe)の認証情報は、.envに本物の値が
+            設定されていてもテスト実行時は常にこのダミー値で上書きする。モックし忘れた通信が
+            万一発生しても、本物の認証情報で外部APIに実通信してしまうことを防ぐ安全策。
+        -->
+        <env name="GOOGLE_CLIENT_ID" value="test-google-client-id"/>
+        <env name="GOOGLE_CLIENT_SECRET" value="test-google-client-secret"/>
+        <env name="GEMINI_API_KEY" value="test-gemini-api-key"/>
+        <env name="STRIPE_KEY" value="pk_test_dummy"/>
+        <env name="STRIPE_SECRET" value="sk_test_dummy"/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="whsec_test_dummy"/>
     </php>
 </phpunit>

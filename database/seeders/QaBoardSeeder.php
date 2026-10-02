@@ -44,7 +44,7 @@ final class QaBoardSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, User>  $students
+     * @param Collection<int, User> $students
      */
     private function seedThreadsForCertification(Certification $certification, Collection $students): void
     {
@@ -96,7 +96,7 @@ final class QaBoardSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int, Certification>  $certifications
+     * @param Collection<int, Certification> $certifications
      */
     private function seedFixedStudentThreads(Collection $certifications): void
     {

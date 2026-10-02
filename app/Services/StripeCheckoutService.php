@@ -8,6 +8,7 @@ use App\Models\MeetingPack;
 use App\Models\Payment;
 use Stripe\Checkout\Session;
 use Stripe\Event;
+use Stripe\Exception\SignatureVerificationException;
 use Stripe\StripeClient;
 use Stripe\Webhook;
 
@@ -52,7 +53,7 @@ class StripeCheckoutService
     /**
      * Webhookのペイロードを署名検証してEventに変換する。
      *
-     * @throws \Stripe\Exception\SignatureVerificationException 署名が不正な場合
+     * @throws SignatureVerificationException 署名が不正な場合
      */
     public function verifyWebhookSignature(string $payload, string $signature): Event
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Http\AiChat;
 
+use App\Exceptions\AiChat\GeminiApiException;
 use App\Models\AiChatConversation;
 use App\Models\AiChatMessage;
 use App\Models\User;
@@ -118,7 +119,7 @@ class AiChatConversationControllerTest extends TestCase
 
         $mock = Mockery::mock(GeminiClient::class);
         $mock->shouldReceive('generateReply')->once()->andThrow(
-            new \App\Exceptions\AiChat\GeminiApiException('failed', 502),
+            new GeminiApiException('failed', 502),
         );
         $this->app->instance(GeminiClient::class, $mock);
 

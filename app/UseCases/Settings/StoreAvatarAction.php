@@ -32,7 +32,7 @@ final class StoreAvatarAction
         $url = "/storage/{$path}";
 
         try {
-            return DB::transaction(function () use ($user, $file, $path, $url, $ulid, $ext) {
+            return DB::transaction(function () use ($user, $file, $url, $ulid, $ext) {
                 $oldUrl = $user->avatar_url;
 
                 Storage::disk('public')->putFileAs('avatars', $file, "{$ulid}.{$ext}");

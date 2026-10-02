@@ -29,7 +29,7 @@ class PasswordUpdateTest extends TestCase
         $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
     }
 
-    public function test_wrong_current_password_fails_with_updatePassword_bag(): void
+    public function test_wrong_current_password_fails_with_update_password_bag(): void
     {
         $user = User::factory()->student()->inProgress()->create([
             'password' => Hash::make('old-password'),

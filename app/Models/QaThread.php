@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\QaThreadStatus;
+use App\Enums\UserRole;
 use Database\Factories\QaThreadFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -70,7 +71,7 @@ class QaThread extends Model
         return $query->whereHas('certification', function (Builder $q) use ($user): void {
             $q->published();
 
-            if ($user->role === \App\Enums\UserRole::Coach) {
+            if ($user->role === UserRole::Coach) {
                 $q->assignedTo($user);
             }
         });

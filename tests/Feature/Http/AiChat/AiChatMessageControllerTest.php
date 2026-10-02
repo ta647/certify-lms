@@ -12,13 +12,14 @@ use App\Models\User;
 use App\Services\GeminiClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class AiChatMessageControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function mockGemini(): \Mockery\MockInterface
+    private function mockGemini(): MockInterface
     {
         $mock = Mockery::mock(GeminiClient::class);
         $this->app->instance(GeminiClient::class, $mock);

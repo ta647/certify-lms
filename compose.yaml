@@ -24,6 +24,24 @@ services:
         depends_on:
             - mysql
             - mailpit
+    queue-worker:
+        build:
+            context: './vendor/laravel/sail/runtimes/8.5'
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: 'sail-8.5/app'
+        command: ['php', 'artisan', 'queue:work', '--tries=3', '--backoff=30,300']
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mysql
+        restart: unless-stopped
     mysql:
         image: 'mysql:8.4'
         ports:

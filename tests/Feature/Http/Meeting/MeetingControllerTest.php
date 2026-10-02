@@ -52,6 +52,34 @@ class MeetingControllerTest extends TestCase
             && ! $meetings->contains('id', $other->id));
     }
 
+    /**
+     * Issue #2 の回帰テスト(受講生側一覧も同じ原因で壊れていた): タブリンクが filter= クエリを使うはず。
+     */
+    public function test_student_index_tab_links_use_filter_query_param(): void
+    {
+        $student = User::factory()->student()->inProgress()->create();
+
+        $response = $this->actingAs($student)->get(route('meetings.index'));
+
+        $response->assertOk();
+        $response->assertSee('filter=past', false);
+        $response->assertSee('filter=all', false);
+    }
+
+    public function test_student_index_past_tab_is_marked_active_when_filter_is_past(): void
+    {
+        $student = User::factory()->student()->inProgress()->create();
+
+        $response = $this->actingAs($student)->get(route('meetings.index', ['filter' => 'past']));
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression(
+            '/border-primary-600[^>]*>\s*過去の面談/',
+            $response->getContent(),
+            '?filter=past でアクセスした場合「過去の面談」タブが選択状態(active)になるはず',
+        );
+    }
+
     public function test_show_blocks_third_party(): void
     {
         $student = User::factory()->student()->inProgress()->create();
@@ -209,6 +237,35 @@ class MeetingControllerTest extends TestCase
         $response->assertViewIs('meeting.coach.index');
         $response->assertViewHas('meetings', fn ($meetings) => $meetings->contains('id', $own->id)
             && ! $meetings->contains('id', $other->id));
+    }
+
+    /**
+     * Issue #2 の回帰テスト: タブリンクが filter= クエリを使うはず(コンポーネント既定の tab= のままだと
+     * コントローラ側が読む filter= と噛み合わず、クリックしてもタブが選択状態にならない)。
+     */
+    public function test_index_as_coach_tab_links_use_filter_query_param(): void
+    {
+        $coach = User::factory()->coach()->create();
+
+        $response = $this->actingAs($coach)->get(route('coach.meetings.index'));
+
+        $response->assertOk();
+        $response->assertSee('filter=past', false);
+        $response->assertSee('filter=all', false);
+    }
+
+    public function test_index_as_coach_past_tab_is_marked_active_when_filter_is_past(): void
+    {
+        $coach = User::factory()->coach()->create();
+
+        $response = $this->actingAs($coach)->get(route('coach.meetings.index', ['filter' => 'past']));
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression(
+            '/border-primary-600[^>]*>\s*過去の面談/',
+            $response->getContent(),
+            '?filter=past でアクセスした場合「過去の面談」タブが選択状態(active)になるはず',
+        );
     }
 
     public function test_upsert_memo_only_for_assigned_coach(): void

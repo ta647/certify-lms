@@ -109,6 +109,24 @@ http://localhost:8000 にアクセスし、下記の[ログインアカウント
 
 > 本サービスは**招待制**です。公開の会員登録画面はありません。新規ユーザーを作るには、管理者でログイン → ユーザー管理から招待 → Mailpit で招待メールの URL を開く → オンボーディング登録、という流れになります。
 
+## 通知・メールのキュー処理
+
+チャット・Q&A 返信・面談の予約／キャンセル／リマインダー・管理者お知らせの通知、および招待メールの送信は、DB ベースのキュー(`jobs` テーブル)に積まれ、専用の worker コンテナ(`queue-worker`)が非同期に処理します。`sail up -d` で他のコンテナと一緒に自動起動するため、通常は何もしなくても送信されます。
+
+```bash
+sail logs queue-worker -f          # worker の処理状況を確認
+```
+
+一時的な送信失敗(メールサーバの不調など)は 30 秒後 → 5 分後の 2 回まで自動リトライし、それでも失敗した場合は `failed_jobs` テーブルに記録されます(配信自体は失われません)。
+
+```bash
+sail artisan queue:failed          # 失敗した送信の一覧
+sail artisan queue:retry all       # 失敗した送信をすべて再投入
+sail artisan queue:retry {id}      # 指定した1件だけ再投入
+```
+
+`.env.example` は `QUEUE_CONNECTION=database` が既定です。既存の `.env` で `QUEUE_CONNECTION=sync` のままになっている場合は `database` に書き換えてください(書き換えないと worker が何も処理しません)。
+
 ## テスト
 
 ```bash

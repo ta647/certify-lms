@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Models\ChatMessage;
+use App\Notifications\Concerns\RetriesTemporaryFailures;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 
 /**
  * チャットルームに新しいメッセージが投稿されたことを、送信者以外のルームメンバーへ通知する。
- * キュー化はしない(同期送信)。
+ * キュー化(T-A-05): 発火元リクエストをブロックしないよう worker に送信を委ねる。
  */
-class ChatMessageReceivedNotification extends Notification
+class ChatMessageReceivedNotification extends Notification implements ShouldQueue
 {
+    use Queueable, RetriesTemporaryFailures;
+
     public function __construct(private readonly ChatMessage $message) {}
 
     /**

@@ -41,7 +41,9 @@ return [
             'table' => 'jobs',
             'queue' => 'default',
             'retry_after' => 90,
-            'after_commit' => false,
+            // true: DBトランザクション内でジョブを積んでも、commit後にpushする(rollback時は積まれない)。
+            // 通知・メール送信の非同期化(T-A-05)で、送信漏れ/ロールバック後の誤送信を防ぐために有効化。
+            'after_commit' => env('QUEUE_AFTER_COMMIT', true),
         ],
 
         'beanstalkd' => [

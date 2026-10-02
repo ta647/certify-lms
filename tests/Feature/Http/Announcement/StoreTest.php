@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Tests\Feature\Http\Announcement;
 
 use App\Enums\EnrollmentStatus;
+use App\Models\Announcement;
 use App\Models\Certification;
 use App\Models\Enrollment;
 use App\Models\User;
 use App\Notifications\AnnouncementNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class StoreTest extends TestCase
@@ -81,7 +84,7 @@ class StoreTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('announcements', ['title' => '個別連絡', 'dispatched_count' => 0]);
-        $this->assertNotNull(\App\Models\Announcement::where('title', '個別連絡')->first()->dispatched_at);
+        $this->assertNotNull(Announcement::where('title', '個別連絡')->first()->dispatched_at);
         Notification::assertNotSentTo($coach, AnnouncementNotification::class);
     }
 
@@ -100,6 +103,32 @@ class StoreTest extends TestCase
 
         $this->assertDatabaseHas('announcements', ['title' => '個別連絡2', 'dispatched_count' => 1]);
         Notification::assertSentTo($student, AnnouncementNotification::class);
+    }
+
+    public function test_bulk_announcement_pushes_jobs_to_queue_instead_of_sending_synchronously(): void
+    {
+        // T-A-05: 一斉配信で対象受講生が多くても、発火元リクエストはキューに積むだけで即応答するはず
+        // (実際の送信は worker が処理する)。Notification::fake() ではなく Queue::fake() で、
+        // 本当にジョブがpushされていること(同期送信の抜け道になっていないこと)を検証する。
+        Queue::fake();
+        $admin = User::factory()->admin()->create();
+        $students = User::factory()->count(5)->student()->inProgress()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.announcements.store'), [
+            'title' => '一斉配信テスト',
+            'body' => '本文',
+            'target_type' => 'all_students',
+        ]);
+
+        $response->assertRedirect();
+        // via() が ['mail', 'database'] の2チャネル × 対象5名 = 10ジョブ
+        Queue::assertPushed(SendQueuedNotifications::class, 10);
+        $students->each(function (User $student) {
+            Queue::assertPushed(
+                SendQueuedNotifications::class,
+                fn (SendQueuedNotifications $job) => $job->notifiables->contains($student),
+            );
+        });
     }
 
     public function test_certification_id_required_when_target_type_is_certification(): void

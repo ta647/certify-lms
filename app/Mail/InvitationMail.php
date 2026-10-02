@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Models\Invitation;
+use App\Notifications\Concerns\RetriesTemporaryFailures;
 use App\Services\InvitationTokenService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class InvitationMail extends Mailable
+/**
+ * キュー化(T-A-05): 招待メール送信で発火元リクエストをブロックしないよう worker に送信を委ねる。
+ */
+class InvitationMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, RetriesTemporaryFailures, SerializesModels;
 
     public function __construct(public Invitation $invitation) {}
 

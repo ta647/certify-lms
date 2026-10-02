@@ -130,8 +130,10 @@ sail artisan queue:retry {id}      # 指定した1件だけ再投入
 ## テスト
 
 ```bash
-sail artisan test                  # 全テスト実行
-sail artisan test --filter=Xxx    # クラス名・メソッド名で絞り込み
+sail artisan test                              # 全テスト実行
+sail artisan test --filter=Xxx                # クラス名・メソッド名で絞り込み
+sail artisan test --group=external-api        # 外部API(Google/Gemini/Stripe)連携のテストのみ実行
+sail artisan test --exclude-group=external-api # それ以外のテストのみ実行
 ```
 
 ## コード整形
@@ -152,6 +154,10 @@ sail bin pint --test     # 整形漏れの確認（CI 相当のチェック）
 - PHPUnit / Laravel Pint
 - league/commonmark（教材本文の Markdown レンダリング）
 - Pusher（チャットのリアルタイム配信）
+- mPDF（修了証の PDF 生成）
+- Stripe（追加面談パックの決済）
+- Google Calendar API（コーチの面談カレンダー連携）
+- Gemini API（受講生向け AI 相談）
 - Docker（Laravel Sail）
 
 ## 環境変数
@@ -173,5 +179,6 @@ sail bin pint --test     # 整形漏れの確認（CI 相当のチェック）
   1. [Stripeダッシュボード](https://dashboard.stripe.com/test/apikeys)(テストモード)で公開可能キー/シークレットキーを取得し、`.env` の `STRIPE_KEY` / `STRIPE_SECRET` に設定
   2. ローカルでWebhookを受信するには [Stripe CLI](https://stripe.com/docs/stripe-cli) を導入し、`stripe listen --forward-to localhost:8000/webhooks/stripe` を実行(表示される `whsec_...` を `STRIPE_WEBHOOK_SECRET` に設定)
   3. 決済はStripeのテストカード(例: `4242 4242 4242 4242`)で試せます
+- `ADMIN_DASHBOARD_CACHE_TTL` — 管理者ダッシュボードの全体KPI・資格別修了率の集計をキャッシュする秒数(既定300秒)。受講状態が変わった場合は即時無効化されるため、通常は変更不要です。
 
 新しい環境変数やセットアップ手順を追加した場合は、`.env.example` と本 README に追記し、チームの誰でも環境を再現できる状態を保ってください。

@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace App\Notifications;
 
 use App\Models\Meeting;
+use App\Notifications\Concerns\RetriesTemporaryFailures;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * 面談がキャンセルされたことを、キャンセル実行者の相手方へ通知する(自己通知はしない)。
- * キュー化はしない(同期送信)。
+ * キュー化(T-A-05): 発火元リクエストをブロックしないよう worker に送信を委ねる。
  */
-class MeetingCanceledNotification extends Notification
+class MeetingCanceledNotification extends Notification implements ShouldQueue
 {
+    use Queueable, RetriesTemporaryFailures;
+
     public function __construct(private readonly Meeting $meeting) {}
 
     /**

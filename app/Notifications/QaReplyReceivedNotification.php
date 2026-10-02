@@ -6,16 +6,21 @@ namespace App\Notifications;
 
 use App\Models\QaReply;
 use App\Models\QaThread;
+use App\Notifications\Concerns\RetriesTemporaryFailures;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 
 /**
  * 質問掲示板のスレッドに新しい回答が投稿されたことを、投稿者へ通知する(自己回答時は発火しない)。
- * キュー化はしない(同期送信)。
+ * キュー化(T-A-05): 発火元リクエストをブロックしないよう worker に送信を委ねる。
  */
-class QaReplyReceivedNotification extends Notification
+class QaReplyReceivedNotification extends Notification implements ShouldQueue
 {
+    use Queueable, RetriesTemporaryFailures;
+
     public function __construct(
         private readonly QaThread $thread,
         private readonly QaReply $reply,

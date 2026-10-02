@@ -6,15 +6,20 @@ namespace App\Notifications;
 
 use App\Enums\MeetingReminderWindow;
 use App\Models\Meeting;
+use App\Notifications\Concerns\RetriesTemporaryFailures;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * 予約済み面談の事前リマインダー(前日 / 開始1時間前)を、面談の当事者(受講生・コーチ)双方へ通知する。
- * キュー化はしない(同期送信)。
+ * キュー化(T-A-05): 発火元(定期実行コマンド)をブロックしないよう worker に送信を委ねる。
  */
-class MeetingReminderNotification extends Notification
+class MeetingReminderNotification extends Notification implements ShouldQueue
 {
+    use Queueable, RetriesTemporaryFailures;
+
     public function __construct(
         private readonly Meeting $meeting,
         private readonly MeetingReminderWindow $window,
